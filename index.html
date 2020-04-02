@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Chat</title>
+	<style>
+
+		#container {
+			width: 60%;
+			margin: auto;
+		}
+
+		#messages {
+			margin-bottom: 60px;
+		}
+
+		#input-field {
+			width: 60%;
+			position: fixed;
+			bottom: 0;
+			left: 20%;
+			display: flex;
+		}
+
+		textarea {
+			width: 80%;
+			resize: none;
+		}
+
+		button {
+			width: 20%;
+			border-left: none;
+		}
+	</style>
+</head>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+	var socket = io();
+</script>
+<body>
+	<div id="container">
+		<div id="messages">
+			
+		</div>
+	</div>
+
+	<div id="chat-users">
+	
+	</div>
+
+	<div id="input-field">
+		<textarea id="message"></textarea>
+		<button onclick="onClick()">Send</button>
+	</div>
+</body>
+<script>
+
+	var msgInput = document.getElementById("message");
+	var msgsContainer = document.getElementById("messages");
+	var chatUsersContainer = document.getElementById("chat-users");
+
+
+	function onClick() {
+		socket.emit("message-to-server", { message: msgInput.value });
+	}
+
+
+	function printUserMessage(msg, author) {
+		var msgBox = document.createElement("div");
+		var msgAuthorBox = document.createElement("div");
+		var msgBodyBox = document.createElement("div");
+
+		msgAuthorBox.innerHTML = author;
+		msgBodyBox.innerHTML = msg;
+
+		msgBox.appendChild(msgAuthorBox);
+		msgBox.appendChild(msgBodyBox);
+
+		msgsContainer.appendChild(msgBox);
+	}
+
+
+	socket.on("message-to-clients", data => {
+		printUserMessage(data.body, data.authorName);
+	});
+
+
+	socket.on("chat-info", data => {
+		var infoText = document.createElement("span");
+		infoText.style.color = "#aaa";
+		infoText.innerHTML = data.message;
+
+		msgsContainer.appendChild(infoText);
+	});
+
+
+	socket.on("chat-users", data => {
+		chatUsersContainer.removeChild(chatUsersContainer.firstChild);
+
+		var list = document.createElement("ul");
+
+		data.users.forEach(name => {
+			var item = document.createElement("li");
+			item.innerHTML = name;
+			list.appendChild(item);
+		});
+
+		chatUsersContainer.appendChild(list);
+	});
+
+
+	socket.on("previous-messages", data => {
+		data.messages.forEach(msg => {
+			printUserMessage(msg.body, msg.authorName);
+		});
+	});
+
+</script>
+</html>
